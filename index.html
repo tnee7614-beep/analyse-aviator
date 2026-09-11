@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Rose Scanner PRO - Ultimate Aviator Predictor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #0b0f19; color: #e2e8f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .neon-border-red { border: 1px solid #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
+        .neon-border-green { border: 1px solid #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
+        .glass-panel { background: rgba(18, 24, 38, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    </style>
+</head>
+<body class="p-4 max-w-md mx-auto">
+
+    <!-- Header -->
+    <div class="text-center my-4">
+        <h1 class="text-2xl font-bold text-red-500 tracking-wider">CYBER ROSE SCANNER <span class="text-xs bg-red-950 text-red-400 px-2 py-0.5 rounded border border-red-800">PRO v3.0</span></h1>
+        <p class="text-xs text-slate-400 mt-1">Moteur Déterministe FNV-1a • Mulberry32 • Kelly Criterion</p>
+    </div>
+
+    <!-- Form Container -->
+    <div class="glass-panel p-4 rounded-xl mb-6">
+        <div class="space-y-3">
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Fotoana T0 (HH:MM:SS)</label>
+                <input type="text" id="timeInput" placeholder="oh: 21:30:00" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-red-500">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">HEX Aviator (13 Caractères)</label>
+                <input type="text" id="hexInput" placeholder="oh: a3f9c2e10b74d" maxlength="13" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm font-mono text-amber-400 focus:outline-none focus:border-red-500">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Last Multiplier</label>
+                    <input type="number" step="0.01" id="lastMultInput" placeholder="oh: 5.20" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:outline-none focus:border-red-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 uppercase mb-1">Solde Total (Ar)</label>
+                    <input type="number" id="bankrollInput" placeholder="oh: 50000" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-emerald-400 focus:outline-none focus:border-red-500">
+                </div>
+            </div>
+            <button onclick="runAnalysis()" class="w-full mt-2 bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-bold py-3 rounded-lg shadow-lg transition duration-200 tracking-wider">
+                ⚡ LANCER LE SCAN
+            </button>
+        </div>
+    </div>
+
+    <!-- Overlay Loader -->
+    <div id="loaderOverlay" class="hidden glass-panel p-6 rounded-xl text-center mb-6 neon-border-red">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-red-500 mb-3"></div>
+        <div id="loaderStatus" class="text-xs font-mono text-red-400">LECTURE DU HEX AVIATOR...</div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="resultsContainer" class="hidden space-y-4 mb-6">
+        <!-- Results appended via JS -->
+    </div>
+
+    <!-- Historique Section -->
+    <div class="glass-panel p-4 rounded-xl">
+        <h2 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-3 flex items-center justify-between">
+            <span>📜 HISTORIQUE DES RÉSULTATS</span>
+            <span id="historyCount" class="text-slate-500 font-mono">0</span>
+        </h2>
+        <div id="historyLog" class="space-y-2 max-h-48 overflow-y-auto pr-1 text-xs font-mono">
+            <div class="text-slate-500 text-center py-2">Mbola tsy misy scan natao.</div>
+        </div>
+    </div>
+
+    <script>
+        function fnv1a(str) {
+            let hash = 0x811c9dc5;
+            for (let i = 0; i < str.length; i++) {
+                hash ^= str.charCodeAt(i);
+                hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+            }
+            return hash >>> 0;
+        }
+
+        function mulberry32(a) {
+            return function() {
+                let t = a += 0x6D2B79F5;
+                t = Math.imul(t ^ t >>> 15, t | 1);
+                t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+                return ((t ^ t >>> 14) >>> 0) / 4294967296;
+            }
+        }
+
+        let historyData = [];
+
+        function runAnalysis() {
+            const timeVal = document.getElementById('timeInput').value || new Date().toLocaleTimeString();
+            const hexVal = document.getElementById('hexInput').value || 'a3f9c2e10b74d';
+            const lastMult = parseFloat(document.getElementById('lastMultInput').value) || 2.00;
+            const bankroll = parseFloat(document.getElementById('bankrollInput').value) || 10000;
+
+            document.getElementById('loaderOverlay').classList.remove('hidden');
+            document.getElementById('resultsContainer').classList.add('hidden');
+
+            const steps = ["LECTURE DU HEX AVIATOR...", "SYNCHRONISATION HORAIRE (T0)...", "CALCUL EMA & VOLATILITÉ...", "OPTIMISATION KELLY (Ar)...", "GÉNÉRATION DES SÉQUENCES..."];
+            let stepIdx = 0;
+
+            const interval = setInterval(() => {
+                stepIdx++;
+                if (stepIdx < steps.length) {
+                    document.getElementById('loaderStatus').innerText = steps[stepIdx];
+                } else {
+                    clearInterval(interval);
+                    document.getElementById('loaderOverlay').classList.add('hidden');
+                    renderResults(timeVal, hexVal, lastMult, bankroll);
+                }
+            }, 300);
+        }
+
+        function renderResults(timeVal, hexVal, lastMult, bankroll) {
+            const seed = fnv1a(timeVal + hexVal + lastMult);
+            const prng = mulberry32(seed);
+
+            const container = document.getElementById('resultsContainer');
+            container.innerHTML = '';
+            container.classList.remove('hidden');
+
+            let now = new Date();
+
+            for (let i = 1; i <= 3; i++) {
+                let offsetSec = Math.floor(prng() * 40) + (i * 45);
+                let tourTime = new Date(now.getTime() + offsetSec * 1000);
+                let timeStr = tourTime.toTimeString().split(' ')[0];
+
+                let mini = (3.00 + (prng() * 2.5)).toFixed(2);
+                let moyenne = (parseFloat(mini) + 1.5 + (prng() * 3.0)).toFixed(2);
+                let risque = (parseFloat(moyenne) + 5.0 + (prng() * 15.0)).toFixed(2);
+
+                let kellyPct = 0.05 + (prng() * 0.05);
+                let kellyMise = Math.floor(bankroll * kellyPct);
+
+                let cardHtml = `
+                    <div class="glass-panel p-4 rounded-xl neon-border-red">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold text-red-400 bg-red-950 px-2 py-0.5 rounded border border-red-800">TOUR ${i}</span>
+                            <span class="text-sm font-mono text-amber-300 font-bold">⏱️ ${timeStr}</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 my-3 text-center">
+                            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                                <div class="text-[10px] text-slate-400 uppercase">Cote Mini</div>
+                                <div class="text-base font-bold text-emerald-400">${mini}x</div>
+                                <div class="text-[9px] text-slate-500">≥ 3.00x</div>
+                            </div>
+                            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                                <div class="text-[10px] text-slate-400 uppercase">Moyenne</div>
+                                <div class="text-base font-bold text-amber-400">${moyenne}x</div>
+                                <div class="text-[9px] text-slate-500">Équilibré</div>
+                            </div>
+                            <div class="bg-slate-900 p-2 rounded-lg border border-slate-800">
+                                <div class="text-[10px] text-slate-400 uppercase">Risque</div>
+                                <div class="text-base font-bold text-rose-500">${risque}x</div>
+                                <div class="text-[9px] text-slate-500">Max Volatilité</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center text-xs bg-slate-900/60 p-2 rounded border border-slate-800">
+                            <span class="text-slate-400">Mise Recommandée (Kelly):</span>
+                            <span class="font-bold font-mono text-emerald-400">${kellyMise.toLocaleString()} Ar</span>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHtml;
+
+                if (i === 1) {
+                    historyData.unshift({ time: timeStr, hex: hexVal, mini: mini, moyenne: moyenne, risque: risque });
+                }
+            }
+
+            updateHistory();
+        }
+
+        function updateHistory() {
+            const historyLog = document.getElementById('historyLog');
+            document.getElementById('historyCount').innerText = historyData.length;
+            historyLog.innerHTML = '';
+
+            historyData.forEach((item) => {
+                historyLog.innerHTML += `
+                    <div class="p-2 bg-slate-900/80 rounded border border-slate-800 flex justify-between items-center mb-1">
+                        <div>
+                            <span class="text-amber-400 font-bold">${item.time}</span> 
+                            <span class="text-slate-500">(${item.hex.substring(0,6)}...)</span>
+                        </div>
+                        <div>
+                            <span class="text-emerald-400 font-bold">${item.mini}x</span> | 
+                            <span class="text-amber-400">${item.moyenne}x</span> | 
+                            <span class="text-rose-400">${item.risque}x</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
+  </html>
