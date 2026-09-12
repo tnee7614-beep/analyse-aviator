@@ -200,6 +200,25 @@
                     </div>
                 `;
             });
+        }function generateTimes() {
+    let now = new Date();
+    let times = [];
+    let baseTime = now.getTime();
+    
+    for (let i = 0; i < 3; i++) {
+        let randomMinutes = Math.floor(Math.random() * (3 - 1 + 1)) + 1;
+        let randomSeconds = Math.floor(Math.random() * 30) + 10; 
+        
+        baseTime += (randomMinutes * 60 + randomSeconds) * 1000;
+        
+        let targetDate = new Date(baseTime);
+        let hours = String(targetDate.getHours()).padStart(2, '0');
+        let minutes = String(targetDate.getMinutes()).padStart(2, '0');
+        let seconds = String(targetDate.getSeconds()).padStart(2, '0');
+        
+        times.push(`${hours}:${minutes}:${seconds}`);
+    }
+    return times;
         }
     </script>
 </body>
